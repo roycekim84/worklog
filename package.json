@@ -1,0 +1,42 @@
+{
+  "name": "worklog",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local desktop calendar worklog app",
+  "main": "dist-electron/main/index.js",
+  "author": "roycekim",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron:build\" \"npm:dev:electron:run\"",
+    "dev:renderer": "vite",
+    "dev:electron:build": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
+    "dev:electron:run": "wait-on tcp:5173 dist-electron/main/index.js dist-electron/preload/index.js && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electronmon dist-electron/main/index.js",
+    "build": "npm run build:renderer && npm run build:electron",
+    "build:renderer": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "start": "electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
+    "dist": "npm run build && electron-builder",
+    "package:dir": "npm run build && electron-builder --dir",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "electronmon": "^2.0.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "wait-on": "^8.0.1"
+  }
+}

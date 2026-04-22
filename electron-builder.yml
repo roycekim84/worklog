@@ -1,0 +1,25 @@
+appId: com.roycekim.worklog
+productName: Worklog
+asar: true
+directories:
+  output: release
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+extraMetadata:
+  main: dist-electron/main/index.js
+mac:
+  identity: null
+  category: public.app-category.productivity
+  target:
+    - dmg
+    - zip
+win:
+  target:
+    - nsis
+    - zip
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
