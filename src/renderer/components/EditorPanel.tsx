@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatDisplayDate } from '../../shared/dates';
 import type { IsoDate, LogEntryFields } from '../../shared/types';
+import { markdownToHtml, renderMarkdownFromFields } from '../../shared/markdown';
 
 interface EditorPanelProps {
   selectedDate: IsoDate;
@@ -10,6 +11,8 @@ interface EditorPanelProps {
   loading: boolean;
   saving: boolean;
   onSave: (fields: LogEntryFields) => void;
+  onExportPdf: (fields: LogEntryFields) => void;
+  exportingPdf: boolean;
 }
 
 const textToBullets = (text: string): string[] => {
@@ -32,7 +35,9 @@ export const EditorPanel = ({
   lastSavedAt,
   loading,
   saving,
-  onSave
+  onSave,
+  onExportPdf,
+  exportingPdf
 }: EditorPanelProps) => {
   const [project, setProject] = useState(fields.project);
   const [workLogText, setWorkLogText] = useState(bulletsToText(fields.workLog));
@@ -47,14 +52,25 @@ export const EditorPanel = ({
   }, [fields]);
 
   const displayDate = useMemo(() => formatDisplayDate(selectedDate), [selectedDate]);
+  const draftFields = useMemo(
+    () => ({ project, notes, workLog: textToBullets(workLogText), nextAction: textToBullets(nextActionText) }),
+    [project, notes, workLogText, nextActionText]
+  );
+  const generatedMarkdown = useMemo(() => renderMarkdownFromFields(selectedDate, draftFields), [selectedDate, draftFields]);
+  const previewHtml = useMemo(() => markdownToHtml(generatedMarkdown), [generatedMarkdown]);
 
   return (
     <section className="editor-panel">
       <div className="panel-header">
         <h2>{displayDate}</h2>
-        <button onClick={() => onSave({ project, notes, workLog: textToBullets(workLogText), nextAction: textToBullets(nextActionText) })} disabled={loading || saving}>
-          {saving ? '저장 중...' : '저장'}
-        </button>
+        <div className="editor-actions">
+          <button onClick={() => onExportPdf(draftFields)} disabled={loading || saving || exportingPdf}>
+            {exportingPdf ? 'PDF 생성 중...' : 'PDF 내보내기'}
+          </button>
+          <button onClick={() => onSave(draftFields)} disabled={loading || saving}>
+            {saving ? '저장 중...' : '저장'}
+          </button>
+        </div>
       </div>
 
       <label>
@@ -81,6 +97,17 @@ export const EditorPanel = ({
         <div>파일: {filePath || '-'}</div>
         <div>마지막 저장 시각: {lastSavedAt ? new Date(lastSavedAt).toLocaleString('ko-KR') : '-'}</div>
         <div className="warning">주의: 비밀번호, 토큰, 사내 기밀 정보는 기록하지 마세요.</div>
+      </div>
+
+      <div className="preview-grid">
+        <section className="preview-panel">
+          <h3>Generated Markdown</h3>
+          <pre>{generatedMarkdown}</pre>
+        </section>
+        <section className="preview-panel">
+          <h3>Rendered Preview</h3>
+          <div className="markdown-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+        </section>
       </div>
     </section>
   );

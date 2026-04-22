@@ -1,11 +1,15 @@
 import type {
   AppBootstrapState,
+  ExportPdfInput,
+  ExportPdfResult,
   FilePickResult,
   LogEntryResult,
   MonthLogState,
   RepoHealth,
   RepoSetupCloneInput,
   RepoSetupExistingInput,
+  SearchLogItem,
+  SearchLogsInput,
   SaveLogInput,
   SaveLogResult
 } from '../shared/types';
@@ -19,8 +23,10 @@ declare global {
       pickDirectory: () => Promise<FilePickResult>;
       preflightRepo: () => Promise<RepoHealth>;
       listMonthLogs: (payload: { year: number; month: number }) => Promise<MonthLogState>;
+      searchLogs: (payload: SearchLogsInput) => Promise<SearchLogItem[]>;
       getLogEntry: (payload: { date: string }) => Promise<LogEntryResult>;
       saveLogEntry: (payload: SaveLogInput) => Promise<SaveLogResult>;
+      exportLogPdf: (payload: ExportPdfInput) => Promise<ExportPdfResult>;
     };
   }
 }

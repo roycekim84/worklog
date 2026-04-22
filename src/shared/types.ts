@@ -62,6 +62,26 @@ export interface SaveLogResult {
   statusMessage: string;
 }
 
+export interface SearchLogItem {
+  date: IsoDate;
+  filePath: string;
+  snippet: string;
+}
+
+export interface SearchLogsInput {
+  query: string;
+  limit?: number;
+}
+
+export interface ExportPdfInput {
+  date: IsoDate;
+  fields: LogEntryFields;
+}
+
+export interface ExportPdfResult {
+  filePath: string;
+}
+
 export interface MonthLogState {
   year: number;
   month: number;

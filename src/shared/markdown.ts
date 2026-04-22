@@ -69,3 +69,66 @@ export const renderMarkdownFromFields = (date: IsoDate, fields: LogEntryFields):
 
   return lines.join('\n');
 };
+
+const escapeHtml = (text: string): string =>
+  text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+export const markdownToHtml = (markdown: string): string => {
+  const lines = markdown.split('\n');
+  const html: string[] = [];
+  let inList = false;
+
+  for (const line of lines) {
+    if (line.startsWith('# ')) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      html.push(`<h1>${escapeHtml(line.slice(2).trim())}</h1>`);
+      continue;
+    }
+
+    if (line.startsWith('## ')) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      html.push(`<h2>${escapeHtml(line.slice(3).trim())}</h2>`);
+      continue;
+    }
+
+    if (/^[-*]\s+/.test(line)) {
+      if (!inList) {
+        html.push('<ul>');
+        inList = true;
+      }
+      html.push(`<li>${escapeHtml(line.replace(/^[-*]\s+/, '').trim())}</li>`);
+      continue;
+    }
+
+    if (line.trim().length === 0) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      continue;
+    }
+
+    if (inList) {
+      html.push('</ul>');
+      inList = false;
+    }
+    html.push(`<p>${escapeHtml(line.trim())}</p>`);
+  }
+
+  if (inList) {
+    html.push('</ul>');
+  }
+
+  return html.join('\n');
+};

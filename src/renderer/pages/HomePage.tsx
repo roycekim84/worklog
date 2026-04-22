@@ -5,7 +5,7 @@ import { StatusBar } from '../components/StatusBar';
 import { useSelectedDate } from '../hooks/useSelectedDate';
 import { useCalendarLogs } from '../hooks/useCalendarLogs';
 import { getYearMonthFromDate, fromIsoDate, toIsoDate } from '../../shared/dates';
-import type { GitActionStatus, IsoDate, LogEntryFields } from '../../shared/types';
+import type { GitActionStatus, IsoDate, LogEntryFields, SearchLogItem } from '../../shared/types';
 import { makeDefaultFields } from '../../shared/markdown';
 
 const getActionGuide = (message: string): string | undefined => {
@@ -45,10 +45,14 @@ export const HomePage = () => {
 
   const [entryLoading, setEntryLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [fields, setFields] = useState<LogEntryFields>(makeDefaultFields());
   const [filePath, setFilePath] = useState('');
   const [lastSavedAt, setLastSavedAt] = useState<string | undefined>(undefined);
   const [status, setStatus] = useState<GitActionStatus>({ type: 'idle', message: '준비됨' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchLogItem[]>([]);
 
   const firstDayOfMonthIso = (date: Date): IsoDate =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01` as IsoDate;
@@ -102,6 +106,44 @@ export const HomePage = () => {
     }
   };
 
+  const handleExportPdf = async (nextFields: LogEntryFields) => {
+    setExportingPdf(true);
+    try {
+      const result = await window.worklogApi.exportLogPdf({
+        date: selectedDate,
+        fields: nextFields
+      });
+      setStatus({
+        type: 'success',
+        message: `PDF 내보내기 완료: ${result.filePath}`,
+        at: new Date().toISOString()
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'PDF 내보내기 실패';
+      setStatus({ type: 'error', message, guide: getActionGuide(message), at: new Date().toISOString() });
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    setSearching(true);
+    try {
+      const results = await window.worklogApi.searchLogs({ query: searchQuery, limit: 40 });
+      setSearchResults(results);
+      setStatus({
+        type: 'info',
+        message: `검색 완료: ${results.length}건`,
+        at: new Date().toISOString()
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '검색 실패';
+      setStatus({ type: 'error', message, guide: getActionGuide(message), at: new Date().toISOString() });
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const shiftMonth = (offset: number) => {
     const target = new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1);
     setViewDate(target);
@@ -116,6 +158,34 @@ export const HomePage = () => {
 
   return (
     <div className="home-layout">
+      <section className="search-panel">
+        <div className="search-row">
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="로그 검색 (날짜, 프로젝트, 메모 등)"
+          />
+          <button onClick={() => void handleSearch()} disabled={searching || !searchQuery.trim()}>
+            {searching ? '검색 중...' : '검색'}
+          </button>
+        </div>
+        {searchResults.length > 0 ? (
+          <div className="search-results">
+            {searchResults.map((result) => (
+              <button
+                key={`${result.date}-${result.filePath}`}
+                className="search-item"
+                onClick={() => setSelectedDate(result.date)}
+              >
+                <strong>{result.date}</strong>
+                <span>{result.snippet || result.filePath}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="search-empty">검색 결과가 없습니다.</div>
+        )}
+      </section>
       <CalendarView
         year={year}
         month={month}
@@ -135,6 +205,8 @@ export const HomePage = () => {
         loading={entryLoading}
         saving={saving}
         onSave={handleSave}
+        onExportPdf={handleExportPdf}
+        exportingPdf={exportingPdf}
       />
       <StatusBar status={status} />
     </div>

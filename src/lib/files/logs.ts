@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
 import path from 'node:path';
 import { getLogFilePath, getMonthDir } from '../calendar/paths';
-import type { AppConfig, IsoDate, LogEntryResult, MonthLogState } from '../../shared/types';
+import type { AppConfig, IsoDate, LogEntryResult, MonthLogState, SearchLogItem } from '../../shared/types';
 import { makeDefaultFields, parseMarkdownToFields, renderMarkdownFromFields } from '../../shared/markdown';
 
 const LOG_FILE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})\.md$/;
@@ -67,4 +68,68 @@ export const writeLogEntry = async (config: AppConfig, isoDate: IsoDate, markdow
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, markdown, 'utf8');
   return filePath;
+};
+
+const walkDir = async (targetDir: string, collector: string[]): Promise<void> => {
+  let entries: Dirent[];
+  try {
+    entries = await fs.readdir(targetDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+
+  for (const entry of entries) {
+    const fullPath = path.join(targetDir, entry.name);
+    if (entry.isDirectory()) {
+      await walkDir(fullPath, collector);
+      continue;
+    }
+    if (entry.isFile() && LOG_FILE_PATTERN.test(entry.name)) {
+      collector.push(fullPath);
+    }
+  }
+};
+
+export const searchLogs = async (config: AppConfig, query: string, limit = 30): Promise<SearchLogItem[]> => {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const logsRoot = path.join(config.repoPath, config.logsRoot);
+  const files: string[] = [];
+  await walkDir(logsRoot, files);
+
+  const results: SearchLogItem[] = [];
+  for (const filePath of files) {
+    const base = path.basename(filePath, '.md');
+    const dateCandidate = base.match(/^\d{4}-\d{2}-\d{2}$/)?.[0] as IsoDate | undefined;
+    if (!dateCandidate) {
+      continue;
+    }
+
+    const raw = await fs.readFile(filePath, 'utf8');
+    const lower = raw.toLowerCase();
+    const matched = lower.includes(normalizedQuery) || dateCandidate.includes(normalizedQuery);
+    if (!matched) {
+      continue;
+    }
+
+    const index = lower.indexOf(normalizedQuery);
+    const snippetStart = Math.max(0, index - 30);
+    const snippetEnd = Math.min(raw.length, index + normalizedQuery.length + 60);
+    const snippet = raw.slice(snippetStart, snippetEnd).replace(/\s+/g, ' ').trim();
+
+    results.push({
+      date: dateCandidate,
+      filePath,
+      snippet
+    });
+
+    if (results.length >= limit) {
+      break;
+    }
+  }
+
+  return results.sort((a, b) => (a.date > b.date ? -1 : 1));
 };
