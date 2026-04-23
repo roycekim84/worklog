@@ -1,9 +1,9 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadConfig, saveConfig } from '../lib/config/store';
+import { createProfile, deleteProfile, listProfiles, loadConfig, saveConfig, switchProfile } from '../lib/config/store';
 import { cloneRepo, getRepoHealth, setupExistingRepo, syncAfterSave, validateRepo } from '../lib/git/client';
-import { listMonthLogs, readLogEntry, searchLogs, writeLogEntry } from '../lib/files/logs';
+import { listMonthLogs, readLogEntry, searchLogs, summarizeMonth, writeLogEntry } from '../lib/files/logs';
 import type {
   AppBootstrapState,
   ExportPdfInput,
@@ -63,12 +63,15 @@ const buildPdfHtml = (title: string, markdownHtml: string): string => `<!doctype
 </html>`;
 
 const buildBootstrapState = async (): Promise<AppBootstrapState> => {
+  const profileState = await listProfiles();
   const config = await loadConfig();
   if (!config) {
     return {
       config: null,
       repoReady: false,
-      validationMessage: '저장소 설정이 필요합니다.'
+      validationMessage: '저장소 설정이 필요합니다.',
+      profiles: profileState.profiles,
+      activeProfileId: profileState.activeProfileId
     };
   }
 
@@ -77,7 +80,9 @@ const buildBootstrapState = async (): Promise<AppBootstrapState> => {
     config,
     repoReady: repoHealth.level !== 'error',
     validationMessage: repoHealth.message,
-    repoHealth
+    repoHealth,
+    profiles: profileState.profiles,
+    activeProfileId: profileState.activeProfileId
   };
 };
 
@@ -117,6 +122,21 @@ app.whenReady().then(async () => {
     return getRepoHealth(config);
   });
 
+  ipcMain.handle('profiles:create', async (_event, payload: { name: string }) => {
+    await createProfile(payload.name);
+    return buildBootstrapState();
+  });
+
+  ipcMain.handle('profiles:switch', async (_event, payload: { profileId: string }) => {
+    await switchProfile(payload.profileId);
+    return buildBootstrapState();
+  });
+
+  ipcMain.handle('profiles:delete', async (_event, payload: { profileId: string }) => {
+    await deleteProfile(payload.profileId);
+    return buildBootstrapState();
+  });
+
   ipcMain.handle('calendar:list-month-logs', async (_event, payload: { year: number; month: number }) => {
     const config = await loadConfig();
     if (!config) {
@@ -124,6 +144,14 @@ app.whenReady().then(async () => {
     }
 
     return listMonthLogs(config, payload.year, payload.month);
+  });
+
+  ipcMain.handle('calendar:get-month-summary', async (_event, payload: { year: number; month: number }) => {
+    const config = await loadConfig();
+    if (!config) {
+      throw new Error('설정이 없습니다.');
+    }
+    return summarizeMonth(config, payload.year, payload.month);
   });
 
   ipcMain.handle('logs:search', async (_event, payload: SearchLogsInput) => {

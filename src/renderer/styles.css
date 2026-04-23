@@ -25,6 +25,14 @@ textarea {
   font: inherit;
 }
 
+select {
+  font: inherit;
+  border-radius: 8px;
+  border: 1px solid #c8c0aa;
+  background: #fffef9;
+  padding: 6px 8px;
+}
+
 .app-shell {
   min-height: 100vh;
   padding: 16px;
@@ -144,6 +152,47 @@ textarea {
   padding: 10px;
 }
 
+.summary-panel {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid #c3bca9;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.summary-panel h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #5d5645;
+}
+
+.summary-keywords {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword-chip {
+  border: 1px solid #d2c9b0;
+  background: #f8f2df;
+  color: #5b4f34;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.summary-empty {
+  color: #7d7259;
+  font-size: 12px;
+}
+
 .search-row {
   display: flex;
   gap: 8px;
@@ -197,6 +246,21 @@ textarea {
   border: 1px solid #c3bca9;
   border-radius: 14px;
   padding: 14px;
+}
+
+.calendar-panel {
+  grid-column: 1 / 2;
+  grid-row: 2;
+}
+
+.summary-panel {
+  grid-column: 1 / 2;
+  grid-row: 3;
+}
+
+.editor-panel {
+  grid-column: 2 / 3;
+  grid-row: 2 / 4;
 }
 
 .panel-header {
@@ -474,6 +538,13 @@ textarea {
   .home-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
+  }
+
+  .calendar-panel,
+  .summary-panel,
+  .editor-panel {
+    grid-column: 1;
+    grid-row: auto;
   }
 
   .preview-grid {

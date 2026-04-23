@@ -26,11 +26,18 @@ export const App = () => {
   const [preflightMessage, setPreflightMessage] = useState('');
   const [preflightHistory, setPreflightHistory] = useState<PreflightEntry[]>([]);
 
+  const applyBootstrapState = (next: AppBootstrapState) => {
+    setState(next);
+    if (!next.repoReady) {
+      setShowSetup(true);
+    }
+  };
+
   useEffect(() => {
     const bootstrap = async () => {
       try {
         const result = await window.worklogApi.getBootstrapState();
-        setState(result);
+        applyBootstrapState(result);
       } finally {
         setLoading(false);
       }
@@ -41,7 +48,7 @@ export const App = () => {
 
   const refreshState = async () => {
     const result = await window.worklogApi.getBootstrapState();
-    setState(result);
+    applyBootstrapState(result);
     setPreflightMessage('');
   };
 
@@ -49,7 +56,12 @@ export const App = () => {
     setWorking(true);
     try {
       const health = await window.worklogApi.preflightRepo();
-      setState((prev) => (prev ? { ...prev, repoHealth: health, validationMessage: health.message } : prev));
+      setState((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return { ...prev, repoHealth: health, validationMessage: health.message };
+      });
       setPreflightMessage(`Preflight: ${health.message}`);
       setPreflightHistory((prev): PreflightEntry[] => {
         const next: PreflightEntry[] = [
@@ -78,6 +90,58 @@ export const App = () => {
     return picked.canceled ? null : picked.path ?? null;
   };
 
+  const createNewProfile = async () => {
+    const name = window.prompt('새 프로필 이름을 입력하세요', `Profile ${(state?.profiles.length ?? 0) + 1}`);
+    if (!name) {
+      return;
+    }
+    setWorking(true);
+    try {
+      const next = await window.worklogApi.createProfile({ name });
+      applyBootstrapState(next);
+      setShowSetup(true);
+      setSetupError('');
+    } catch (error) {
+      setSetupError(error instanceof Error ? error.message : '프로필 생성 실패');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const switchActiveProfile = async (profileId: string) => {
+    setWorking(true);
+    try {
+      const next = await window.worklogApi.switchProfile({ profileId });
+      applyBootstrapState(next);
+      setSetupError('');
+    } catch (error) {
+      setSetupError(error instanceof Error ? error.message : '프로필 전환 실패');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const removeActiveProfile = async () => {
+    if (!state?.activeProfileId || state.profiles.length <= 1) {
+      return;
+    }
+    const ok = window.confirm('현재 프로필을 삭제하시겠습니까?');
+    if (!ok) {
+      return;
+    }
+
+    setWorking(true);
+    try {
+      const next = await window.worklogApi.deleteProfile({ profileId: state.activeProfileId });
+      applyBootstrapState(next);
+      setSetupError('');
+    } catch (error) {
+      setSetupError(error instanceof Error ? error.message : '프로필 삭제 실패');
+    } finally {
+      setWorking(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading-screen">초기 상태 로딩 중...</div>;
   }
@@ -94,7 +158,7 @@ export const App = () => {
           setWorking(true);
           try {
             const next = await window.worklogApi.setupExistingRepo(params);
-            setState(next);
+            applyBootstrapState(next);
             setSetupError('');
             setShowSetup(false);
           } catch (error) {
@@ -107,7 +171,7 @@ export const App = () => {
           setWorking(true);
           try {
             const next = await window.worklogApi.cloneRepo(params);
-            setState(next);
+            applyBootstrapState(next);
             setSetupError('');
             setShowSetup(false);
           } catch (error) {
@@ -150,6 +214,19 @@ export const App = () => {
           ) : null}
         </div>
         <div className="header-actions">
+          <select
+            value={state.activeProfileId ?? ''}
+            onChange={(event) => void switchActiveProfile(event.target.value)}
+            disabled={working}
+          >
+            {state.profiles.map((profile) => (
+              <option key={profile.id} value={profile.id}>
+                {profile.name}
+              </option>
+            ))}
+          </select>
+          <button onClick={() => void createNewProfile()} disabled={working}>프로필 추가</button>
+          <button onClick={() => void removeActiveProfile()} disabled={working || state.profiles.length <= 1}>프로필 삭제</button>
           <button
             onClick={() => {
               setSetupError('');

@@ -5,7 +5,7 @@ import { StatusBar } from '../components/StatusBar';
 import { useSelectedDate } from '../hooks/useSelectedDate';
 import { useCalendarLogs } from '../hooks/useCalendarLogs';
 import { getYearMonthFromDate, fromIsoDate, toIsoDate } from '../../shared/dates';
-import type { GitActionStatus, IsoDate, LogEntryFields, SearchLogItem } from '../../shared/types';
+import type { GitActionStatus, IsoDate, LogEntryFields, MonthSummary, SearchLogItem } from '../../shared/types';
 import { makeDefaultFields } from '../../shared/markdown';
 
 const getActionGuide = (message: string): string | undefined => {
@@ -53,6 +53,7 @@ export const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchLogItem[]>([]);
+  const [monthSummary, setMonthSummary] = useState<MonthSummary | null>(null);
 
   const firstDayOfMonthIso = (date: Date): IsoDate =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01` as IsoDate;
@@ -85,6 +86,19 @@ export const HomePage = () => {
 
     void fetchEntry();
   }, [selectedDate]);
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const summary = await window.worklogApi.getMonthSummary({ year, month });
+        setMonthSummary(summary);
+      } catch {
+        setMonthSummary(null);
+      }
+    };
+
+    void fetchSummary();
+  }, [year, month]);
 
   const handleSave = async (nextFields: LogEntryFields) => {
     setSaving(true);
@@ -197,6 +211,21 @@ export const HomePage = () => {
         onNextMonth={() => shiftMonth(1)}
         onToday={handleToday}
       />
+      <section className="summary-panel">
+        <h3>{year}년 {month}월 요약</h3>
+        <div className="summary-stats">
+          <div>기록일수: <strong>{monthSummary?.loggedDays ?? 0}</strong></div>
+          <div>Work Log 항목: <strong>{monthSummary?.totalWorkItems ?? 0}</strong></div>
+          <div>Next Action 항목: <strong>{monthSummary?.totalNextActions ?? 0}</strong></div>
+        </div>
+        <div className="summary-keywords">
+          {(monthSummary?.topKeywords ?? []).length > 0 ? (
+            (monthSummary?.topKeywords ?? []).map((keyword) => <span key={keyword} className="keyword-chip">{keyword}</span>)
+          ) : (
+            <span className="summary-empty">키워드 없음</span>
+          )}
+        </div>
+      </section>
       <EditorPanel
         selectedDate={selectedDate}
         fields={fields}

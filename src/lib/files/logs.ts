@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
 import path from 'node:path';
 import { getLogFilePath, getMonthDir } from '../calendar/paths';
-import type { AppConfig, IsoDate, LogEntryResult, MonthLogState, SearchLogItem } from '../../shared/types';
+import type { AppConfig, IsoDate, LogEntryResult, MonthLogState, MonthSummary, SearchLogItem } from '../../shared/types';
 import { makeDefaultFields, parseMarkdownToFields, renderMarkdownFromFields } from '../../shared/markdown';
 
 const LOG_FILE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})\.md$/;
@@ -132,4 +132,71 @@ export const searchLogs = async (config: AppConfig, query: string, limit = 30): 
   }
 
   return results.sort((a, b) => (a.date > b.date ? -1 : 1));
+};
+
+const STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'from', 'that', 'this', 'have', 'work', 'log', 'next', 'action', 'project', 'notes',
+  '오늘', '이번', '및', '작업', '내용', '다음', '계획', '정리', '진행', '회의', '검토', '기록', '업무'
+]);
+
+const tokenize = (text: string): string[] =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣\s]/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && !STOPWORDS.has(token));
+
+export const summarizeMonth = async (config: AppConfig, year: number, month: number): Promise<MonthSummary> => {
+  const targetDir = getMonthDir(config.repoPath, config.logsRoot, year, month);
+  const keywordCounts = new Map<string, number>();
+
+  let loggedDays = 0;
+  let totalWorkItems = 0;
+  let totalNextActions = 0;
+
+  try {
+    const files = await fs.readdir(targetDir, { withFileTypes: true });
+    for (const file of files) {
+      if (!file.isFile() || !LOG_FILE_PATTERN.test(file.name)) {
+        continue;
+      }
+
+      const fullPath = path.join(targetDir, file.name);
+      const raw = await fs.readFile(fullPath, 'utf8');
+      const fields = parseMarkdownToFields(raw);
+
+      loggedDays += 1;
+      totalWorkItems += fields.workLog.filter((line) => line.trim().length > 0).length;
+      totalNextActions += fields.nextAction.filter((line) => line.trim().length > 0).length;
+
+      const bag = tokenize([fields.project, ...fields.workLog, fields.notes, ...fields.nextAction].join(' '));
+      for (const token of bag) {
+        keywordCounts.set(token, (keywordCounts.get(token) ?? 0) + 1);
+      }
+    }
+  } catch {
+    return {
+      year,
+      month,
+      loggedDays: 0,
+      totalWorkItems: 0,
+      totalNextActions: 0,
+      topKeywords: []
+    };
+  }
+
+  const topKeywords = [...keywordCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([keyword]) => keyword);
+
+  return {
+    year,
+    month,
+    loggedDays,
+    totalWorkItems,
+    totalNextActions,
+    topKeywords
+  };
 };

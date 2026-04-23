@@ -93,6 +93,8 @@ export interface AppBootstrapState {
   repoReady: boolean;
   validationMessage: string;
   repoHealth?: RepoHealth;
+  profiles: ProfileSummary[];
+  activeProfileId?: string;
 }
 
 export interface GitActionStatus {
@@ -113,4 +115,18 @@ export interface RepoHealth {
   originUrl?: string;
   configuredBranch?: string;
   currentBranch?: string;
+}
+
+export interface ProfileSummary {
+  id: string;
+  name: string;
+}
+
+export interface MonthSummary {
+  year: number;
+  month: number;
+  loggedDays: number;
+  totalWorkItems: number;
+  totalNextActions: number;
+  topKeywords: string[];
 }
