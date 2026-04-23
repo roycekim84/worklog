@@ -15,11 +15,15 @@
 - 날짜 클릭 시 우측 에디터에서 읽기/수정
 - Markdown 파일 생성/갱신
 - 저장 후 Git `add` -> `commit` -> (옵션) `push`
+- Generated Markdown + Rendered Preview 동시 미리보기
+- 로그 검색 (날짜/본문)
+- 선택 날짜 로그 PDF 내보내기
 
 ## 설치/운영 원칙 (회사 환경)
 
 - 회사 PC에서는 `npm`을 사용하지 않습니다.
-- 회사 PC에서는 GitHub를 코드 다운로드 용도로만 사용합니다.
+- 회사 PC에서는 **소스코드 ZIP을 받아 `npm install`하지 않습니다.**
+- 회사 PC에서는 설치본(`.dmg`, `.exe`, `.zip`)만 설치해서 사용합니다.
 - 실제 로그 저장소 remote는 사내 Git Enterprise만 사용합니다.
 - 업무 로그 내용이 GitHub(공개/외부 remote)로 푸시되지 않도록 반드시 분리합니다.
 
@@ -59,14 +63,15 @@ npm run dev
 ## 회사 PC 설치 방법 (npm 없이)
 
 권장 방식:
-1. 개인 개발 PC에서 설치본을 생성합니다.
-2. GitHub Releases 또는 사내 파일 공유에 설치 파일(또는 압축 실행본)을 업로드합니다.
+1. 최신 설치본 위치를 확인합니다: [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)
+2. GitHub Releases 또는 사내 파일 공유에서 설치 파일(또는 압축 실행본)을 받습니다.
 3. 회사 PC에 설치(또는 압축 해제) 후 앱을 실행합니다.
 4. 첫 실행에서 "기존 로컬 저장소 사용"으로 사내 Git Enterprise 저장소를 연결합니다.
 
 주의:
 - 회사 PC에서 소스코드 직접 빌드(`npm install`, `npm run ...`)는 전제하지 않습니다.
 - 설치본은 개인 개발 PC에서 미리 빌드해 전달하는 방식이 안전합니다.
+- 회사 사용자는 저장소 전체 코드 다운로드 + `npm install` 경로를 사용하지 않습니다.
 
 ## 설치본 생성 (개인 개발 PC)
 
@@ -88,6 +93,7 @@ npm run package:win
 
 참고:
 - 기본 설정은 로컬 배포를 위해 macOS 코드 서명을 강제하지 않습니다.
+- 설치본 바이너리는 Git 히스토리에 직접 커밋하지 않고 Releases 자산으로 배포합니다.
 
 ## 앱 첫 실행 설정
 
@@ -124,7 +130,15 @@ npm run package:win
 2. 로그가 있는 날짜는 마킹됩니다.
 3. 날짜를 클릭하면 우측 에디터가 열립니다.
 4. 기존 파일이 있으면 로드, 없으면 템플릿이 로드됩니다.
-5. 저장하면 Markdown 파일이 생성/수정되고 Git 동기화가 실행됩니다.
+5. 에디터 하단에서 Generated Markdown과 Rendered Preview를 동시에 확인할 수 있습니다.
+6. 저장하면 Markdown 파일이 생성/수정되고 Git 동기화가 실행됩니다.
+7. 필요하면 `PDF 내보내기`로 `exports/YYYY/MM/YYYY-MM-DD.pdf`를 생성합니다.
+
+## 검색 기능
+
+- 상단 검색창에서 날짜/본문 키워드 검색 가능
+- 검색 결과 클릭 시 해당 날짜 로그로 이동
+- 결과는 최신 날짜 우선으로 표시
 
 ## 로그 파일 규칙
 
@@ -196,6 +210,13 @@ worklog: update YYYY-MM-DD
 
 ## 문제 해결
 
+- 회사 PC에서 `npm install` 실패:
+  - 정상입니다. 회사 사용자 경로는 설치본 실행이며 `npm` 경로가 아닙니다.
+  - [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)에서 설치본만 받아 설치하세요.
+- 개발 PC에서 `npm install` 실패:
+  - Node.js 버전 확인 (`node -v`, Node 20+ 필요)
+  - 사내망/프록시 환경이면 npm registry 접근 정책 확인
+  - `preinstall` 단계의 환경 체크 메시지 확인
 - `git push` 실패:
   - 인증 상태 확인 (`git remote -v`, `git config`, SSH 키/PAT)
   - 브랜치 권한/보호 규칙 확인
@@ -215,8 +236,5 @@ worklog: update YYYY-MM-DD
 
 ## 로드맵 (MVP 이후)
 
-- Markdown 미리보기 강화
 - 월간 요약
-- 검색
-- PDF 내보내기
 - 다중 프로필

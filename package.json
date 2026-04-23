@@ -7,6 +7,7 @@
   "author": "roycekim",
   "license": "MIT",
   "scripts": {
+    "preinstall": "node ./scripts/check-env.mjs",
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron:build\" \"npm:dev:electron:run\"",
     "dev:renderer": "vite",
     "dev:electron:build": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
@@ -20,6 +21,9 @@
     "package:dir": "npm run build && electron-builder --dir",
     "package:mac": "npm run build && electron-builder --mac",
     "package:win": "npm run build && electron-builder --win"
+  },
+  "engines": {
+    "node": ">=20 <23"
   },
   "dependencies": {
     "react": "^18.3.1",

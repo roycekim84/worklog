@@ -13,6 +13,8 @@
 1. 앱이 정상 실행된다.
 2. 첫 진입 시 저장소 설정 화면이 나온다.
 3. 설정 화면에 경고 문구(사내 Git Enterprise 사용 권장)가 보인다.
+4. 소스코드 다운로드 + `npm install` 경로를 사용하지 않았는지 확인한다.
+5. 설치본 출처가 [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)와 일치하는지 확인한다.
 
 ## 2. 저장소 설정 확인
 
@@ -38,6 +40,7 @@
 2. 날짜 클릭 시 우측 편집 패널이 갱신된다.
 3. 로그 없는 날짜는 기본 템플릿이 로드된다.
 4. 기존 로그 날짜는 내용이 로드된다.
+5. 에디터 하단의 Generated Markdown/Rendered Preview가 입력 내용과 동기화된다.
 
 ## 4. 저장 및 Git 동기화
 
@@ -46,6 +49,18 @@
 3. 커밋 메시지 `worklog: update YYYY-MM-DD` 확인
 4. auto-push ON이면 사내 원격으로 push 성공
 5. auto-push OFF이면 커밋까지만 수행
+
+## 4-1. 검색 기능 점검
+
+1. 상단 검색창에서 키워드 검색이 동작한다.
+2. 날짜 문자열(`YYYY-MM-DD`) 검색이 동작한다.
+3. 검색 결과 클릭 시 해당 날짜가 선택되고 에디터가 갱신된다.
+
+## 4-2. PDF 내보내기 점검
+
+1. `PDF 내보내기` 버튼 클릭 시 파일이 생성된다.
+2. 생성 경로가 `exports/YYYY/MM/YYYY-MM-DD.pdf` 규칙을 따른다.
+3. PDF 내용이 해당 날짜의 최신 편집 내용과 일치한다.
 
 ## 5. 오류 케이스 점검
 
