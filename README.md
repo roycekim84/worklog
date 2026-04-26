@@ -23,9 +23,10 @@
 
 ## 설치/운영 원칙 (회사 환경)
 
-- 회사 PC에서는 `npm`을 사용하지 않습니다.
-- 회사 PC에서는 **소스코드 ZIP을 받아 `npm install`하지 않습니다.**
-- 회사 PC에서는 설치본(`.dmg`, `.exe`, `.zip`)만 설치해서 사용합니다.
+- 회사 PC에서는 `npm` 사용이 가능합니다.
+- 회사 PC에서는 두 경로 중 하나를 사용합니다.
+- `GitHub 코드 다운로드 -> npm install -> npm run ...`
+- `빌드된 Windows 설치본(.exe/.zip) 실행`
 - 실제 로그 저장소 remote는 사내 Git Enterprise만 사용합니다.
 - 업무 로그 내용이 GitHub(공개/외부 remote)로 푸시되지 않도록 반드시 분리합니다.
 
@@ -62,7 +63,9 @@ npm install
 npm run dev
 ```
 
-## 회사 PC 설치 방법 (npm 없이)
+## 회사 PC 설치 방법
+
+### 방법 A: Windows 설치본 실행
 
 권장 방식:
 1. 최신 설치본 위치를 확인합니다: [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)
@@ -71,18 +74,35 @@ npm run dev
 4. 첫 실행에서 "기존 로컬 저장소 사용"으로 사내 Git Enterprise 저장소를 연결합니다.
 
 주의:
-- 회사 PC에서 소스코드 직접 빌드(`npm install`, `npm run ...`)는 전제하지 않습니다.
-- 설치본은 개인 개발 PC에서 미리 빌드해 전달하는 방식이 안전합니다.
-- 회사 사용자는 저장소 전체 코드 다운로드 + `npm install` 경로를 사용하지 않습니다.
+- 회사에 Mac은 없으므로 Windows 설치본 기준으로 운영합니다.
+- 현재 확인된 Windows 설치본:
+- `release/Worklog Setup 0.1.0.exe`
+- `release/Worklog-0.1.0-arm64-win.zip`
 
-## 설치본 생성 (개인 개발 PC)
+### 방법 B: GitHub에서 직접 빌드
+
+회사 PC에서도 `npm` 사용이 가능하다면 직접 빌드할 수 있습니다.
 
 ```bash
+git clone https://github.com/roycekim84/worklog.git
+cd worklog
 npm install
-npm run package:mac
+npm run dev
 ```
 
-Windows 설치본이 필요하면:
+배포용 빌드:
+
+```bash
+npm run build
+```
+
+Windows 설치본 생성:
+
+```bash
+npm run package:win
+```
+
+## 설치본 생성
 
 ```bash
 npm run package:win
@@ -90,11 +110,10 @@ npm run package:win
 
 생성 위치:
 - `release/` 디렉터리
-- `npm run package:dir` 결과: `release/mac-arm64/Worklog.app` (macOS, 디렉터리 형태)
-- 예: `.dmg`, `.zip`(macOS), `.exe`/`.zip`(Windows)
+- Windows installer: `release/Worklog Setup 0.1.0.exe`
+- Windows portable zip: `release/Worklog-0.1.0-arm64-win.zip`
 
 참고:
-- 기본 설정은 로컬 배포를 위해 macOS 코드 서명을 강제하지 않습니다.
 - 설치본 바이너리는 Git 히스토리에 직접 커밋하지 않고 Releases 자산으로 배포합니다.
 
 ## 앱 첫 실행 설정
@@ -207,11 +226,12 @@ worklog: update YYYY-MM-DD
 회사에서 바로 세팅하려면:
 
 1. Git 설치 및 사내 인증(SSH 키 또는 PAT) 준비
-2. 설치본(Release artifact) 다운로드
-3. 앱 설치/실행
-4. 앱에서 사내 저장소/브랜치 설정 완료
-5. `git remote -v`로 remote가 사내 주소인지 확인
-6. 테스트 날짜 하나 저장 후 커밋/푸시 성공 확인
+2. 아래 둘 중 하나 선택
+3. 설치본 실행: `.exe` 또는 `.zip`
+4. 또는 GitHub 코드 다운로드 후 `npm install`
+5. 앱에서 사내 저장소/브랜치 설정 완료
+6. `git remote -v`로 실제 로그 저장소 remote가 사내 주소인지 확인
+7. 테스트 날짜 하나 저장 후 커밋/푸시 성공 확인
 
 ## 주의 사항 (보안/프라이버시)
 
@@ -223,13 +243,14 @@ worklog: update YYYY-MM-DD
 
 ## 문제 해결
 
-- 회사 PC에서 `npm install` 실패:
-  - 정상입니다. 회사 사용자 경로는 설치본 실행이며 `npm` 경로가 아닙니다.
-  - [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)에서 설치본만 받아 설치하세요.
 - 개발 PC에서 `npm install` 실패:
   - Node.js 버전 확인 (`node -v`, Node 20+ 필요)
   - 사내망/프록시 환경이면 npm registry 접근 정책 확인
   - `preinstall` 단계의 환경 체크 메시지 확인
+- 회사 PC에서 `npm install` 실패:
+  - Node.js 버전 확인 (`node -v`, Node 20+ 필요)
+  - 사내망/프록시 환경이면 npm registry 접근 정책 확인
+  - 직접 빌드가 막히면 [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)의 Windows 설치본 경로를 사용
 - `git push` 실패:
   - 인증 상태 확인 (`git remote -v`, `git config`, SSH 키/PAT)
   - 브랜치 권한/보호 규칙 확인
