@@ -16,6 +16,12 @@
 4. 소스코드 다운로드 + `npm install` 경로를 사용하지 않았는지 확인한다.
 5. 설치본 출처가 [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)와 일치하는지 확인한다.
 
+## 1-1. 웹앱 실행 확인
+
+1. `npm run web` 실행이 성공한다.
+2. 브라우저에서 `http://127.0.0.1:3210` 접속이 된다.
+3. 초기 `bootstrap` 상태가 정상 응답한다.
+
 ## 2. 저장소 설정 확인
 
 ### 기존 로컬 저장소 모드

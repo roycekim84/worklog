@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import { app } from 'electron';
 import type { AppConfig, ProfileSummary } from '../../shared/types';
 
 const CONFIG_FILE = 'worklog-config.json';
@@ -17,7 +17,24 @@ type ConfigStore = {
   profiles: StoredProfile[];
 };
 
-const getConfigPath = () => path.join(app.getPath('userData'), CONFIG_FILE);
+const getConfigBaseDir = async (): Promise<string> => {
+  if (process.env.WORKLOG_CONFIG_DIR?.trim()) {
+    return process.env.WORKLOG_CONFIG_DIR.trim();
+  }
+
+  try {
+    const electron = await import('electron');
+    if (electron.app?.isReady()) {
+      return electron.app.getPath('userData');
+    }
+  } catch {
+    // Fallback to a plain Node path for web mode.
+  }
+
+  return path.join(os.homedir(), '.worklog');
+};
+
+const getConfigPath = async () => path.join(await getConfigBaseDir(), CONFIG_FILE);
 
 const normalizeAppConfig = (config: AppConfig): AppConfig => ({
   ...config,
@@ -59,7 +76,7 @@ const migrateLegacyConfig = (legacy: AppConfig): ConfigStore => {
 
 const loadStore = async (): Promise<ConfigStore> => {
   try {
-    const raw = await fs.readFile(getConfigPath(), 'utf8');
+    const raw = await fs.readFile(await getConfigPath(), 'utf8');
     const parsed = JSON.parse(raw) as ConfigStore | AppConfig;
 
     if ('version' in parsed && parsed.version === 2) {
@@ -77,7 +94,7 @@ const loadStore = async (): Promise<ConfigStore> => {
 };
 
 const saveStore = async (store: ConfigStore): Promise<void> => {
-  const target = getConfigPath();
+  const target = await getConfigPath();
   const normalized = normalizeStore(store);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, JSON.stringify(normalized, null, 2), 'utf8');

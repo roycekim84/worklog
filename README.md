@@ -8,6 +8,12 @@
 - 저장 방식: `logs/YYYY/MM/YYYY-MM-DD.md`
 - 중요 정책: 업무 로그 데이터는 회사 외부로 공유하지 않음
 
+## 권장 실행 방식
+
+- 현재 권장 방식은 **로컬 웹앱 실행**입니다.
+- 설치/언인스톨 문제를 줄이기 위해 브라우저에서 `http://127.0.0.1:3210`으로 사용하는 경로를 우선합니다.
+- Electron 설치형은 유지되지만, 회사 환경에서는 웹앱 경로가 더 안정적입니다.
+
 ## 목표 기능 (MVP)
 
 - 월간 캘린더 메인 화면
@@ -42,7 +48,7 @@
 - Node.js 20 LTS 이상
 - Git 최신 안정 버전
 
-## 빠른 시작 (개인 개발 PC)
+## 빠른 시작 (웹앱)
 
 ### 1) 저장소 클론
 
@@ -57,15 +63,40 @@ cd worklog
 npm install
 ```
 
-### 3) 개발 실행
+### 3) 웹앱 실행
 
 ```bash
-npm run dev
+npm run web
 ```
 
-## 회사 PC 설치 방법
+실행 후 브라우저에서 아래 주소를 엽니다.
 
-### 방법 A: Windows 설치본 실행
+```text
+http://127.0.0.1:3210
+```
+
+검증된 동작:
+- `npm run web` 실행 성공
+- `GET /api/bootstrap` 정상 응답 확인
+
+## 회사 PC 실행 방법
+
+### 방법 A: 웹앱으로 실행 (권장)
+
+```bash
+git clone https://github.com/roycekim84/worklog.git
+cd worklog
+npm install
+npm run web
+```
+
+브라우저 접속:
+
+```text
+http://127.0.0.1:3210
+```
+
+### 방법 B: Windows 설치본 실행
 
 권장 방식:
 1. 최신 설치본 위치를 확인합니다: [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)
@@ -78,29 +109,6 @@ npm run dev
 - 현재 확인된 Windows 설치본:
 - `release/Worklog Setup 0.1.0.exe`
 - `release/Worklog-0.1.0-arm64-win.zip`
-
-### 방법 B: GitHub에서 직접 빌드
-
-회사 PC에서도 `npm` 사용이 가능하다면 직접 빌드할 수 있습니다.
-
-```bash
-git clone https://github.com/roycekim84/worklog.git
-cd worklog
-npm install
-npm run dev
-```
-
-배포용 빌드:
-
-```bash
-npm run build
-```
-
-Windows 설치본 생성:
-
-```bash
-npm run package:win
-```
 
 ## 설치본 생성
 
@@ -115,6 +123,12 @@ npm run package:win
 
 참고:
 - 설치본 바이너리는 Git 히스토리에 직접 커밋하지 않고 Releases 자산으로 배포합니다.
+
+## 웹앱 실행 메모
+
+- 로컬 설정 파일은 Electron 없이도 동작하도록 별도 경로에 저장됩니다.
+- 브라우저에서는 폴더 선택 다이얼로그 대신 경로 입력 프롬프트를 사용합니다.
+- 실제 Git 작업과 파일 저장은 로컬 Node 서버가 처리합니다.
 
 ## 앱 첫 실행 설정
 
@@ -227,8 +241,8 @@ worklog: update YYYY-MM-DD
 
 1. Git 설치 및 사내 인증(SSH 키 또는 PAT) 준비
 2. 아래 둘 중 하나 선택
-3. 설치본 실행: `.exe` 또는 `.zip`
-4. 또는 GitHub 코드 다운로드 후 `npm install`
+3. 권장: GitHub 코드 다운로드 후 `npm install` 및 `npm run web`
+4. 또는 설치본 실행: `.exe` 또는 `.zip`
 5. 앱에서 사내 저장소/브랜치 설정 완료
 6. `git remote -v`로 실제 로그 저장소 remote가 사내 주소인지 확인
 7. 테스트 날짜 하나 저장 후 커밋/푸시 성공 확인
@@ -250,7 +264,8 @@ worklog: update YYYY-MM-DD
 - 회사 PC에서 `npm install` 실패:
   - Node.js 버전 확인 (`node -v`, Node 20+ 필요)
   - 사내망/프록시 환경이면 npm registry 접근 정책 확인
-  - 직접 빌드가 막히면 [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)의 Windows 설치본 경로를 사용
+  - 웹앱 기동이 안 되면 `http://127.0.0.1:3210` 포트 사용 가능 여부 확인
+  - 직접 실행이 막히면 [latest-installer/LATEST.md](/Users/roycekim/royce_lab/worklog/latest-installer/LATEST.md)의 Windows 설치본 경로를 사용
 - `git push` 실패:
   - 인증 상태 확인 (`git remote -v`, `git config`, SSH 키/PAT)
   - 브랜치 권한/보호 규칙 확인

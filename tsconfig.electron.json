@@ -11,5 +11,5 @@
     "resolveJsonModule": true,
     "types": ["node", "electron"]
   },
-  "include": ["src/main", "src/preload", "src/shared", "src/lib"]
+  "include": ["src/main", "src/preload", "src/server", "src/shared", "src/lib"]
 }
