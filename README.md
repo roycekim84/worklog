@@ -257,6 +257,9 @@ worklog: update YYYY-MM-DD
 
 ## 문제 해결
 
+- `npm install` 관련 상세 가이드:
+  - [NPM_INSTALL_TROUBLESHOOTING.md](/Users/roycekim/royce_lab/worklog/NPM_INSTALL_TROUBLESHOOTING.md)
+
 - 개발 PC에서 `npm install` 실패:
   - Node.js 버전 확인 (`node -v`, Node 20+ 필요)
   - 사내망/프록시 환경이면 npm registry 접근 정책 확인
